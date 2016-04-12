@@ -17,7 +17,7 @@ import numpy as np
 from sklearn import metrics
 import auxiliary
 import algorithms
-
+import vectors
 import tensorflow as tf
 from tensorflow.models.rnn import rnn, rnn_cell
 import skflow
@@ -27,8 +27,8 @@ import skflow
 # Download dbpedia_csv.tar.gz from
 # https://drive.google.com/folderview?id=0Bz8a_Dbh9Qhbfll6bVpmNUtUcFdjYmF2SEpmZUZUcVNiMUw1TWN6RDV3a0JHT3kxLVhVR2M
 # Unpack: tar -xvf dbpedia_csv.tar.gz
-BIG_SOURCE_COUNT = 250
-BIG_TARGET_COUNT = 250
+BIG_SOURCE_COUNT = 500
+BIG_TARGET_COUNT = 500
 
 train = auxiliary.json_to_pandas('data/reviews_Books.json.gz', BIG_SOURCE_COUNT)
 train.overall = train.overall.replace(3, 1)
@@ -96,12 +96,12 @@ def exp_decay(global_step):
         decay_steps=100, decay_rate=0.001)
 
 classifier = skflow.TensorFlowEstimator(model_fn=rnn_model, n_classes=2,
-        steps=100000000, optimizer='Adam', learning_rate=exp_decay, continue_training=True)
-X_train = algorithms.coral(X_train, X_test)
-# Continuously train for 1000 steps
+        steps=100, optimizer='Adam', learning_rate=exp_decay, continue_training=True)
+#X_train = algorithms.coral(X_train, X_test)
+
 while True:
     try:
-        classifier.fit(X_train, y_train, logdir='./')
+        classifier.fit(algorithms.coral(X_train, X_test), y_train, logdir='./')
     except KeyboardInterrupt:
         #classifier.save(model_path)
         break

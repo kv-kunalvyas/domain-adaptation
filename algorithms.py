@@ -1,17 +1,19 @@
 # the CORAL algorithm
-import numpy as np
+import numpy
+import scipy
 
 
 def coral(d_source, d_target):
     print 'Adapting Domains - CORAL'
-    d_source = softmax(d_source)
-    d_target = softmax(d_target)
-    covariance_source = np.cov(d_source) + np.eye(len(d_source))
-    covariance_target = np.cov(d_target) + np.eye(len(d_target))
-    d_source = np.dot(np.nan_to_num(np.sqrt(np.reciprocal(covariance_source))), d_source)
-    ds_out = np.dot(np.nan_to_num(softmax(np.sqrt(covariance_target))), d_source)
-    return np.nan_to_num(ds_out)
+    # Calculating covariances of source and target. Here, numpy.eye(d_source.shape[1]) is the identity matrix of size
+    # n X n where n is the second dimension of the matrix, or the number of columns.
+    # numpy.transpose(d_source) transposes the matrix so as to add it's covariance to the identity matrix
+    covariance_source = numpy.add(numpy.cov(numpy.transpose(d_source)), numpy.eye(d_source.shape[1]))
+    covariance_target = numpy.add(numpy.cov(numpy.transpose(d_target)), numpy.eye(d_target.shape[1]))
+    # scipy.linalg.sqrtm computes the square root of the matrix (not element wise)
+    # numpy.dot multiplies the square root and source matrix
+    d_source = numpy.dot(d_source, scipy.linalg.sqrtm(numpy.reciprocal(covariance_source)))
+    # Finally, ds_out is the output we need
+    ds_out = numpy.dot(d_source, scipy.linalg.sqrtm(covariance_target))
+    return ds_out
 
-
-def softmax(z):
-    return np.exp(z) / np.sum(np.exp(z))

@@ -10,15 +10,16 @@ from random import shuffle
 
 
 VECTOR_DIMENSION = 500
-BIG_SOURCE_COUNT = 1000
-BIG_TARGET_COUNT = 1000
+# DOUBT: source and target have to be same size for coral
+BIG_SOURCE_COUNT = 10000
+BIG_TARGET_COUNT = 10000
 
 
 def prepare_data(size):
     if size == 'small':
-        small_df_p, small_count_p = auxiliary.xml_to_pandas('data/sorted_data_acl/books/positive.xml')
-        small_df_n, small_count_n = auxiliary.xml_to_pandas('data/sorted_data_acl/books/negative.xml')
-        small_df_u, small_count_u = auxiliary.xml_to_pandas('data/sorted_data_acl/books/unlabeled.xml')
+        small_df_p, small_count_p = auxiliary.xml_to_pandas('data/sorted_data_acl/dvd/positive.xml')
+        small_df_n, small_count_n = auxiliary.xml_to_pandas('data/sorted_data_acl/dvd/negative.xml')
+        small_df_u, small_count_u = auxiliary.xml_to_pandas('data/sorted_data_acl/dvd/unlabeled.xml')
         small_target_p, small_count_target_p = auxiliary.xml_to_pandas('data/sorted_data_acl/books/positive.xml')
         small_target_n, small_count_target_n = auxiliary.xml_to_pandas('data/sorted_data_acl/books/negative.xml')
         small_target_u, small_count_target_u = auxiliary.xml_to_pandas('data/sorted_data_acl/books/unlabeled.xml')
