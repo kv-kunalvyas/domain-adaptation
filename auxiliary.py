@@ -4,17 +4,27 @@
 import pandas
 import lxml.etree
 import gzip
+import numpy as np
 
 
 def xml_to_pandas(xml_file):
     # TODO: add a check for root existence
     # TODO: fix review vs xml issue
-    # xml_file = add_root(xml_file)
+    #xml_file = add_root(xml_file)
+
+    with open(xml_file, 'r') as f:
+        newlines = []
+        for line in f.readlines():
+            newlines.append(line)
+    with open(xml_file, 'w') as f:
+        for line in newlines:
+            f.write(line.decode('utf-8', 'ignore').encode("utf-8"))
+
     review_list = [["rating", "review_text"]]
     parser = lxml.etree.XMLParser(encoding='utf-8', recover=True)
     tree = lxml.etree.parse(xml_file, parser=parser)
     root = tree.getroot()
-    elements = 0
+    element_count = 0
     for x in root.iter():
         if x.tag == "review":
             for y in x.iter():
@@ -22,10 +32,10 @@ def xml_to_pandas(xml_file):
                     a = y.text.replace('\n', '')
                 if y.tag == "review_text":
                     b = y.text.replace('\n', '')
-            elements += 1
+                    element_count += 1
             review_list.append([a, b])
     df = pandas.DataFrame(review_list)
-    return df, elements
+    return df
 
 
 def parse(path):
@@ -47,14 +57,11 @@ def json_to_pandas(json_file, limit):
 
 
 def rating_to_label(item):
+    item = float(item)
     if item > 3.0:
         return 1.0
-    elif item <= 3.0:
+    elif item < 3.0:
         return 0.0
-
-
-def model_to_array():
-    pass
 
 
 def add_root(xml_file):
@@ -66,4 +73,3 @@ def add_root(xml_file):
         f.write("</root>")
         f.close()
     return xml_file
-

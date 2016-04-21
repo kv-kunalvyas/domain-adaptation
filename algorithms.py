@@ -12,8 +12,7 @@ def coral(d_source, d_target):
     covariance_target = numpy.add(numpy.cov(numpy.transpose(d_target)), numpy.eye(d_target.shape[1]))
     # scipy.linalg.sqrtm computes the square root of the matrix (not element wise)
     # numpy.dot multiplies the square root and source matrix
-    d_source = numpy.dot(d_source, scipy.linalg.sqrtm(numpy.reciprocal(covariance_source)))
+    d_source = numpy.dot(d_source, scipy.linalg.sqrtm(numpy.linalg.inv(covariance_source)))
     # Finally, ds_out is the output we need
     ds_out = numpy.dot(d_source, scipy.linalg.sqrtm(covariance_target))
     return ds_out
-

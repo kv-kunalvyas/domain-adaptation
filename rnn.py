@@ -22,14 +22,9 @@ import tensorflow as tf
 from tensorflow.models.rnn import rnn, rnn_cell
 import skflow
 
-### Training data
-
-# Download dbpedia_csv.tar.gz from
-# https://drive.google.com/folderview?id=0Bz8a_Dbh9Qhbfll6bVpmNUtUcFdjYmF2SEpmZUZUcVNiMUw1TWN6RDV3a0JHT3kxLVhVR2M
-# Unpack: tar -xvf dbpedia_csv.tar.gz
-BIG_SOURCE_COUNT = 500
+BIG_SOURCE_COUNT = 1000
 BIG_TARGET_COUNT = 500
-
+'''
 train = auxiliary.json_to_pandas('data/reviews_Books.json.gz', BIG_SOURCE_COUNT)
 train.overall = train.overall.replace(3, 1)
 train.overall = train.overall.replace(2, 1)
@@ -44,7 +39,10 @@ test.overall = test.overall.replace(1, 1)
 test.overall = test.overall.replace(5, 0)
 test.overall = test.overall.replace(4, 0)
 X_test, y_test = test['reviewText'], test['overall']
+'''
 
+X_train, y_train = vectors.text_to_vector(auxiliary.json_to_pandas('data/reviews_Books.json.gz'))
+X_test, y_test = vectors.text_to_vector(auxiliary.json_to_pandas('data/reviews_Electronics.json.gz'))
 ### Process vocabulary
 
 MAX_DOCUMENT_LENGTH = 5
@@ -90,18 +88,38 @@ def rnn_model(X, y):
     return skflow.models.logistic_regression(encoding, y)
 
 
+def input_op_fn(X):
+    # Convert indexes of words into embeddings.
+    # This creates embeddings matrix of [n_words, EMBEDDING_SIZE] and then
+    # maps word indexes of the sequence into [batch_size, sequence_length,
+    # EMBEDDING_SIZE].
+    word_vectors = skflow.ops.categorical_variable(X, n_classes=n_words,
+        embedding_size=EMBEDDING_SIZE, name='words')
+    # Split into list of embedding per word, while removing doc length dim.
+    # word_list results to be a list of tensors [batch_size, EMBEDDING_SIZE].
+    word_list = skflow.ops.split_squeeze(1, MAX_DOCUMENT_LENGTH, word_vectors)
+    return word_list
+
+
 def exp_decay(global_step):
     return tf.train.exponential_decay(
         learning_rate=0.1, global_step=global_step,
         decay_steps=100, decay_rate=0.001)
 
-classifier = skflow.TensorFlowEstimator(model_fn=rnn_model, n_classes=2,
-        steps=100, optimizer='Adam', learning_rate=exp_decay, continue_training=True)
+classifier = skflow.TensorFlowEstimator(model_fn=rnn_model, n_classes=2, steps=100, optimizer='Adam',
+                                        learning_rate=exp_decay, continue_training=True)
+'''
+classifier = skflow.TensorFlowRNNClassifier(rnn_size=EMBEDDING_SIZE,
+    n_classes=2, cell_type='gru', input_op_fn=input_op_fn,
+    num_layers=1, bidirectional=True, sequence_length=vectors.VECTOR_DIMENSION,
+    steps=1000, optimizer='Adam', learning_rate=0.01, continue_training=True)
+'''
+#print X_train
 #X_train = algorithms.coral(X_train, X_test)
-
+#print X_train
 while True:
     try:
-        classifier.fit(algorithms.coral(X_train, X_test), y_train, logdir='./')
+        classifier.fit(X_train, y_train, logdir='/tmp/tf_examples/my_model_1/')
     except KeyboardInterrupt:
         #classifier.save(model_path)
         break
