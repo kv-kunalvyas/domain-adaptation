@@ -64,6 +64,10 @@ def rating_to_label(item):
         return 0.0
 
 
+def calc_avg(A):
+    return sum(A) / float(len(A))
+
+
 def add_root(xml_file):
     with open(xml_file, "r+w") as f:
         temp = f.read()

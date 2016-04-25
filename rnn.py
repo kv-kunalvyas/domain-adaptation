@@ -45,7 +45,7 @@ X_train, y_train = vectors.text_to_vector(auxiliary.json_to_pandas('data/reviews
 X_test, y_test = vectors.text_to_vector(auxiliary.json_to_pandas('data/reviews_Electronics.json.gz'))
 ### Process vocabulary
 
-MAX_DOCUMENT_LENGTH = 5
+MAX_DOCUMENT_LENGTH = 10
 
 vocab_processor = skflow.preprocessing.VocabularyProcessor(MAX_DOCUMENT_LENGTH)
 X_train = np.array(list(vocab_processor.fit_transform(X_train)))
@@ -78,7 +78,7 @@ def rnn_model(X, y):
     # word_list results to be a list of tensors [batch_size, EMBEDDING_SIZE].
     word_list = skflow.ops.split_squeeze(1, MAX_DOCUMENT_LENGTH, word_vectors)
     # Create a Gated Recurrent Unit cell with hidden size of EMBEDDING_SIZE.
-    cell = rnn_cell.GRUCell(EMBEDDING_SIZE)
+    cell = rnn_cell.LSTMCell(EMBEDDING_SIZE)
     # Create an unrolled Recurrent Neural Networks to length of
     # MAX_DOCUMENT_LENGTH and passes word_list as inputs for each unit.
     _, encoding = rnn.rnn(cell, word_list, dtype=tf.float32)
@@ -86,6 +86,7 @@ def rnn_model(X, y):
     # neural network of last step) and pass it as features for logistic
     # regression over output classes.
     return skflow.models.logistic_regression(encoding, y)
+
 
 
 def input_op_fn(X):
