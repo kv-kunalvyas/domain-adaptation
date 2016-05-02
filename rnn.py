@@ -22,17 +22,17 @@ import tensorflow as tf
 from tensorflow.models.rnn import rnn, rnn_cell
 import skflow
 
-BIG_SOURCE_COUNT = 1000
-BIG_TARGET_COUNT = 500
+SOURCE_COUNT = 1000
+TARGET_COUNT = 500
 '''
-train = auxiliary.json_to_pandas('data/reviews_Books.json.gz', BIG_SOURCE_COUNT)
+train = auxiliary.json_to_pandas('data/reviews_Books.json.gz', SOURCE_COUNT)
 train.overall = train.overall.replace(3, 1)
 train.overall = train.overall.replace(2, 1)
 train.overall = train.overall.replace(1, 1)
 train.overall = train.overall.replace(5, 0)
 train.overall = train.overall.replace(4, 0)
 X_train, y_train = train['reviewText'], train['overall']
-test = auxiliary.json_to_pandas('data/reviews_Electronics.json.gz', BIG_TARGET_COUNT)
+test = auxiliary.json_to_pandas('data/reviews_Electronics.json.gz', TARGET_COUNT)
 test.overall = test.overall.replace(3, 1)
 test.overall = test.overall.replace(2, 1)
 test.overall = test.overall.replace(1, 1)
@@ -55,7 +55,7 @@ n_words = len(vocab_processor.vocabulary_)
 print('Total words: %d' % n_words)
 
 ### Models
-EMBEDDING_SIZE = 50
+EMBEDDING_SIZE = 500
 
 
 def average_model(X, y):
@@ -116,7 +116,7 @@ classifier = skflow.TensorFlowRNNClassifier(rnn_size=EMBEDDING_SIZE,
     steps=1000, optimizer='Adam', learning_rate=0.01, continue_training=True)
 '''
 #print X_train
-#X_train = algorithms.coral(X_train, X_test)
+X_train = algorithms.coral(X_train, X_test)
 #print X_train
 while True:
     try:

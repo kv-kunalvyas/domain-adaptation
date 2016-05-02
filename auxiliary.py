@@ -11,7 +11,6 @@ def xml_to_pandas(xml_file):
     # TODO: add a check for root existence
     # TODO: fix review vs xml issue
     #xml_file = add_root(xml_file)
-
     with open(xml_file, 'r') as f:
         newlines = []
         for line in f.readlines():
@@ -36,6 +35,41 @@ def xml_to_pandas(xml_file):
             review_list.append([a, b])
     df = pandas.DataFrame(review_list)
     return df
+
+
+def processed_reviews(filename):
+    output = []
+    with open(filename) as f:
+        for line in f:
+            split_line = line.split()
+            for item in range(len(split_line)-1):
+                while split_line[item][-1] != ':':
+                    split_line[item] = split_line[item][:-1].decode('utf-8')
+                split_line[item] = split_line[item][:-1]
+            if split_line[-1] == '#label#:negative':
+                split_line[-1] = 0.0
+            elif split_line[-1] == '#label#:positive':
+                split_line[-1] = 1.0
+            output.append([split_line[-1], split_line[:-1]])
+    return output
+
+
+def add_all_data(size):
+    output = []
+    if size == 's':
+        output = processed_reviews('data/processed_acl/books/positive.review') + \
+                 processed_reviews('data/processed_acl/books/negative.review') + \
+                 processed_reviews('data/processed_acl/dvd/positive.review') + \
+                 processed_reviews('data/processed_acl/dvd/negative.review') + \
+                 processed_reviews('data/processed_acl/electronics/positive.review') + \
+                 processed_reviews('data/processed_acl/electronics/negative.review') + \
+                 processed_reviews('data/processed_acl/kitchen/positive.review') + \
+                 processed_reviews('data/processed_acl/kitchen/negative.review') + \
+                 processed_reviews('data/processed_acl/books/unlabeled.review') + \
+                 processed_reviews('data/processed_acl/dvd/unlabeled.review') + \
+                 processed_reviews('data/processed_acl/electronics/unlabeled.review') + \
+                 processed_reviews('data/processed_acl/kitchen/unlabeled.review')
+    return output
 
 
 def parse(path):
@@ -77,3 +111,10 @@ def add_root(xml_file):
         f.write("</root>")
         f.close()
     return xml_file
+
+
+def calc_transfer_loss(x, y):
+    transfer_error = 1 - x
+    baseline_indomain_error = 1 - y
+    transfer_loss = transfer_error - baseline_indomain_error
+    return transfer_loss
