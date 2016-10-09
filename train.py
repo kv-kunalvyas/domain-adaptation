@@ -3,10 +3,11 @@ import visualizations
 import auxiliary
 import vectors
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, precision_score, f1_score
+from sklearn.metrics import accuracy_score
 import skflow
 import numpy as np
 from random import shuffle
+from sklearn import cross_validation
 from sklearn.cross_validation import train_test_split
 from sklearn.cross_validation import ShuffleSplit
 from sklearn.grid_search import GridSearchCV
@@ -53,6 +54,10 @@ while True:
 
 
 def train_model(train_size, coral, source, target=None):
+    gammas = np.logspace(-6, -1, 10)
+    gammas = [0.1]
+    Cs = np.logspace(-2, 2, 5)  # Keeping C values between 10^-2 and 10^2
+    Cs = [1]
     if target:
         print source, '->', target
         #source_data, source_labels, target_data, target_labels = vectors.text_to_vector(None, 2, SOURCE, TARGET)
@@ -69,26 +74,34 @@ def train_model(train_size, coral, source, target=None):
             source_data = algorithms.coral(source_data, target_data)
 
         # Splitting data for cross validation
-        X_train, X_test, y_train, y_test = train_test_split(source_data, source_labels, test_size=0.2, random_state=0)
+        X_train, X_test, y_train, y_test = train_test_split(source_data,
+                                                            source_labels,
+                                                            test_size=0.2,
+                                                            random_state=2)
 
         print 'Training...'
         # Linear SVM with default square hinge loss
         # Tutorial for tuning parameters used from http://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html
-        cv = ShuffleSplit(X_train.shape[0], n_iter=10, test_size=0.2, random_state=0)
-        #gammas = np.logspace(-6, -1, 10)
-        gammas = [0.1]
-        Cs = [1] # Keeping C values between 10^-3 to 10^3
-        grid = GridSearchCV(estimator=SVC(), cv=cv, param_grid=dict(gamma=gammas, C=Cs))
+        cv = ShuffleSplit(X_train.shape[0],
+                          n_iter=10,
+                          test_size=0.2,
+                          random_state=0)
+        grid = GridSearchCV(estimator=SVC(),
+                            cv=cv,
+                            param_grid=dict(gamma=gammas, C=Cs))
         grid.fit(X_train, y_train)
         print("The best parameters are %s with a score of %0.2f" % (grid.best_params_, grid.best_score_))
 
-        estimator = SVC(kernel='linear', gamma=grid.best_estimator_.gamma, C=grid.best_estimator_.C)
-
-        #print 'Plotting Learning Curve...'
-        #title = 'Learning Curves (SVM, linear kernel, $\gamma=%.6f$, $\C=%.3f$)' % (grid.best_estimator_.gamma, grid.best_estimator_.C)
-        #visualizations.plot_learning_curve(estimator, title, X_train, y_train, cv=cv)
-
-        print 'Fitting model on complete source data...'
+        estimator = SVC(kernel='linear',
+                        gamma=grid.best_estimator_.gamma,
+                        C=grid.best_estimator_.C)
+        '''
+        print 'Plotting Learning Curve...'
+        title = 'Learning Curves (SVM, linear kernel, $\gamma=%.6f, C=%.3f$)' % (
+            grid.best_estimator_.gamma, grid.best_estimator_.C)
+        visualizations.plot_learning_curve(estimator, title, X_train, y_train, cv=cv)
+        '''
+        print 'Fitting model on complete train/source data...'
         estimator.fit(source_data, source_labels)
 
         print 'Computing metrics...'
@@ -101,40 +114,57 @@ def train_model(train_size, coral, source, target=None):
         train_data, train_labels = data[:train_size], labels[:train_size]
         test_data, test_labels = data[train_size:], labels[train_size:]
         # Splitting data for cross validation
-        X_train, X_test, y_train, y_test = train_test_split(train_data, train_labels, test_size=0.2, random_state=0)
+        X_train, X_test, y_train, y_test = train_test_split(train_data,
+                                                            train_labels,
+                                                            test_size=0.2,
+                                                            random_state=0)
 
         print 'Training...'
         # Linear SVM with default square hinge loss
         # Tutorial for tuning parameters used from http://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html
-        cv = ShuffleSplit(X_train.shape[0], n_iter=10, test_size=0.2, random_state=0)
-        # gammas = np.logspace(-6, -1, 10)
-        gammas = [0.1]
-        Cs = [1]  # Keeping C values between 10^-3 to 10^3
-        grid = GridSearchCV(estimator=SVC(), cv=cv, param_grid=dict(gamma=gammas, C=Cs))
+        cv = ShuffleSplit(X_train.shape[0],
+                          n_iter=10,
+                          test_size=0.2,
+                          random_state=0)
+        grid = GridSearchCV(estimator=SVC(),
+                            cv=cv,
+                            param_grid=dict(gamma=gammas, C=Cs))
         grid.fit(X_train, y_train)
         print("The best parameters are %s with a score of %0.2f" % (grid.best_params_, grid.best_score_))
 
-        estimator = SVC(kernel='linear', gamma=grid.best_estimator_.gamma, C=grid.best_estimator_.C)
+        estimator = SVC(kernel='linear',
+                        gamma=grid.best_estimator_.gamma,
+                        C=grid.best_estimator_.C)
 
-        print 'Fitting model on complete source data...'
+        print 'Fitting model on train data...'
         estimator.fit(train_data, train_labels)
 
         print 'Computing metrics...'
         pred_labels = estimator.predict(test_data)
         return test_labels, pred_labels
 
-target_labels, predicted_labels = train_model(2000, True, 'books', 'electronics')
-accuracy = accuracy_score(target_labels, predicted_labels)
-precision = precision_score(target_labels, predicted_labels)
-f1_score = f1_score(target_labels, predicted_labels)
+accuracies, t_accuracies = [], []
+for rounds in range(5):
+    target_labels, predicted_labels = train_model(train_size=2000,
+                                                  coral=True,
+                                                  source='books',
+                                                  target='electronics')
+    t_target_labels, t_predicted_labels = train_model(train_size=1600,
+                                                      coral=False,
+                                                      source='electronics')
 
-t_target_labels, t_predicted_labels = train_model(1600, False, 'electronics')
-t_accuracy = accuracy_score(t_target_labels, t_predicted_labels)
+    accuracy = accuracy_score(target_labels, predicted_labels)
+    t_accuracy = accuracy_score(t_target_labels, t_predicted_labels)
 
+    print accuracy, t_accuracy
+    accuracies.append(accuracy)
+    t_accuracies.append(t_accuracy)
+
+accuracy = np.mean(np.array(accuracies))
+t_accuracy = np.mean(np.array(t_accuracies))
 transfer_loss = auxiliary.calc_transfer_loss(accuracy, t_accuracy)
 
-#print 'Accuracy: ', t_accuracy, '; Precision: ', precision, '; F1 Score: ', f1_score
-print transfer_loss, accuracy, t_accuracy
+print transfer_loss, 1.0-accuracy, 1.0-t_accuracy
 
 print 'Plotting other visualisations...'
 #visualizations.plot_hyperparameter_heatmap(grid=grid, gamma_list=gammas, C_list=Cs)

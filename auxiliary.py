@@ -42,15 +42,20 @@ def processed_reviews(filename):
     with open(filename) as f:
         for line in f:
             split_line = line.split()
+            extra_words = []
             for item in range(len(split_line)-1):
+                count_str = ''
                 while split_line[item][-1] != ':':
+                    count_str = split_line[item][-1].decode('utf-8') + count_str
                     split_line[item] = split_line[item][:-1].decode('utf-8')
                 split_line[item] = split_line[item][:-1]
+                for x in range(int(count_str)):
+                    extra_words.append(split_line[item])
             if split_line[-1] == '#label#:negative':
                 split_line[-1] = 0.0
             elif split_line[-1] == '#label#:positive':
                 split_line[-1] = 1.0
-            output.append([split_line[-1], split_line[:-1]])
+            output.append([split_line[-1], split_line[:-1]+extra_words])
     return output
 
 

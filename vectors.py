@@ -16,7 +16,7 @@ from sklearn.naive_bayes import GaussianNB
 
 warnings.filterwarnings("ignore")
 
-VECTOR_DIMENSION = 500
+VECTOR_DIMENSION = 1000
 SOURCE_COUNT = 500000
 TARGET_COUNT = 500000
 
@@ -30,6 +30,7 @@ def prepare_data(size, domain):
         s_p = auxiliary.processed_reviews('data/processed_acl/' + domain + '/positive.review')
         s_n = auxiliary.processed_reviews('data/processed_acl/' + domain + '/negative.review')
         output = s_p + s_n
+        shuffle(output)
         shuffle(output)
         #s_u = auxiliary.processed_reviews('data/processed_acl/' + domain + '/unlabeled.review')
         return output
@@ -240,9 +241,10 @@ def text_to_vector(text=None, algo_type=0, source=None, target=None):
         # TODO: delete sources.txt
         # os.remove('sources.txt')
 
-        model = Doc2Vec(sentences, alpha=0.025, size=VECTOR_DIMENSION, window=8, min_count=3, workers=4,
-                        max_vocab_size=10000)
-        for epoch in range(1, 5):
+        model = Doc2Vec(sentences, alpha=0.025, size=VECTOR_DIMENSION, window=500, min_count=3, workers=16,
+                        dm=0)
+
+        for x in range(1, 2):
             model.train(sentences)
 
         train_data_features = numpy.zeros((len(labels), VECTOR_DIMENSION))
